@@ -1,0 +1,145 @@
+1. Judul dan Penjelasan Awal
+Berikan judul proyek.
+
+Tambahkan penjelasan singkat tentang tujuan proyek (misalnya: “Analisis sentimen ulasan aplikasi e-commerce di Indonesia”).
+
+Jelaskan sumber dataset dan jumlah data yang digunakan.
+
+2. Memuat Dataset
+Langkah awal adalah membaca dataset gabungan (yang sudah dibersihkan) ke dalam notebook:
+```
+import pandas as pd
+
+# Memuat dataset
+dataset_path = "final_cleaned_dataset.csv"  # Ganti dengan path file Anda
+df = pd.read_csv(dataset_path)
+
+# Cuplikan data
+print("Cuplikan Data:")
+print(df.head())
+
+# Informasi data
+print("\nInformasi Data:")
+print(df.info())
+
+# Distribusi sentimen
+print("\nDistribusi Sentimen:")
+print(df['sentiment'].value_counts())
+```
+
+3. Ekstraksi Fitur
+Lakukan proses ekstraksi fitur pada teks ulasan. Gunakan metode seperti:
+
+- TF-IDF (Term Frequency-Inverse Document Frequency):
+```
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+tfidf = TfidfVectorizer(max_features=10000)  # 10.000 fitur kata
+X = tfidf.fit_transform(df['content_cleaned'])  # Ubah teks menjadi numerik
+```
+- Word2Vec (Opsional untuk model deep learning): Jika Anda menggunakan metode Word Embeddings:
+```
+from gensim.models import Word2Vec
+
+tokenized_text = [text.split() for text in df['content_cleaned']]
+w2v_model = Word2Vec(tokenized_text, vector_size=100, window=5, min_count=2)
+```
+
+4. Pembagian Data
+Bagi dataset menjadi training set dan testing set:
+```
+from sklearn.model_selection import train_test_split
+
+# Membagi data
+X_train, X_test, y_train, y_test = train_test_split(X, df['sentiment'], test_size=0.2, random_state=42)
+
+# Periksa ukuran dataset
+print("Jumlah data Training:", X_train.shape)
+print("Jumlah data Testing:", X_test.shape)
+```
+
+5. Pelatihan Model (Machine Learning dan Deep Learning)
+Lakukan tiga percobaan pelatihan model untuk memenuhi kriteria:
+
+- Percobaan 1: Logistic Regression dengan TF-IDF
+```
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
+
+model_lr = LogisticRegression()
+model_lr.fit(X_train, y_train)
+
+# Prediksi dan evaluasi
+y_pred_lr = model_lr.predict(X_test)
+print("Akurasi Logistic Regression:", accuracy_score(y_test, y_pred_lr))
+print("\nLaporan Klasifikasi Logistic Regression:\n", classification_report(y_test, y_pred_lr))
+```
+- Percobaan 2: Random Forest dengan Word Embeddings
+Jika menggunakan Word2Vec:
+```
+from sklearn.ensemble import RandomForestClassifier
+
+model_rf = RandomForestClassifier()
+model_rf.fit(X_train, y_train)
+
+# Prediksi dan evaluasi
+y_pred_rf = model_rf.predict(X_test)
+print("Akurasi Random Forest:", accuracy_score(y_test, y_pred_rf))
+```
+- Percobaan 3: LSTM dengan Word Embeddings
+Gunakan TensorFlow untuk membangun model LSTM:
+```
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+
+model_lstm = Sequential()
+model_lstm.add(Embedding(input_dim=10000, output_dim=128, input_length=100))
+model_lstm.add(LSTM(128, dropout=0.2))
+model_lstm.add(Dense(3, activation='softmax'))
+
+model_lstm.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+# Latih model
+model_lstm.fit(X_train, y_train, batch_size=32, epochs=10, validation_split=0.2)
+
+# Evaluasi
+loss, accuracy = model_lstm.evaluate(X_test, y_test)
+print(f"Akurasi LSTM: {accuracy * 100:.2f}%")
+```
+
+6. Evaluasi dan Visualisasi
+Tampilkan hasil evaluasi seperti confusion matrix dan distribusi akurasi:
+```
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+cm = confusion_matrix(y_test, y_pred_lr)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['negatif', 'netral', 'positif'])
+disp.plot(cmap="Blues")
+```
+
+7. Inference (Opsional untuk Saran Tambahan)
+Tambahkan cell untuk inference, memungkinkan model memprediksi sentimen dari teks baru:
+```
+def predict_sentiment(text, model, tfidf_vectorizer):
+    text_vector = tfidf_vectorizer.transform([text])
+    prediction = model.predict(text_vector)
+    return prediction[0]
+
+text = "Saya sangat suka aplikasi ini, sangat bermanfaat!"
+print("Prediksi Sentimen:", predict_sentiment(text, model_lr, tfidf))
+```
+
+8. Kesimpulan
+Sertakan kesimpulan:
+
+Bandingkan hasil akurasi dari ketiga percobaan.
+
+Jelaskan model mana yang paling sesuai berdasarkan akurasi, recall, dan precision.
+
+9. Simpan File dan Dokumentasi
+Simpan semua output model dan dataset.
+
+Simpan dataset gabungan:
+```
+combined_dataset.to_csv("final_cleaned_dataset.csv", index=False, encoding="utf-8")
+```
